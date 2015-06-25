@@ -1,0 +1,62 @@
+#Current complete code as of 6/24/15 7:51 MST
+
+import socket
+
+def raw(msg):
+   message = msg+"\r\n"
+   irc.send(message.encode())
+def chat(msg):
+   message = "PRIVMSG #testing123 :" + msg + "\r\n"
+   irc.send(message.encode())
+def action(msg):
+   message = "PRIVMSG #testing123 :\x01ACTION " + msg + "\x01\r\n"
+   irc.send(message.encode())
+def chatnick(msg):
+   nick = data.split()[0]
+   message = "PRIVMSG " + nick + ":" + msg + "\r\n"
+   irc.send(message.encode())
+ 
+
+
+network = 'irc.shaw.ca'
+port = 6667
+irc = socket.socket( socket.AF_INET, socket.SOCK_STREAM)
+irc.connect(( network, port))
+ 
+print(irc.recv(4096).decode())
+ 
+raw('NICK AzothBot')
+raw('USER  AzothBot AzothBot AzothBot :Python IRC')
+raw('JOIN #testing123')
+chat("Hello World")
+while True:
+   data = (irc.recv(4096).decode()) #removed extra annoying spaces?
+   if data.find('PING') != -1:
+      to_send = 'PONG ' + data.split()[1] + "\r\n"  #here, we're storing what you want to send as a variable, we can reference it later?
+      irc.send(to_send.encode()) #now, we can send what was stored, with encoding.
+   if data.find ( '!myBot quit' ) != -1: #quit bot
+      chat("Fine, if you don't want me")
+      chat('QUIT\r\n')
+   if data.find ( '!oldf') !=-1: # makes old fashioned
+      action( 'makes an old fashioned')
+   if data.find ( '!sandwich') !=-1: #makes sandwich
+      action( 'makes a GIGANTIC sanmmich')
+   if data.find ( '!hi' ) != -1: #says hi
+      chat('Hello')
+   if data.find ('!cheese' ) != -1: #Cheese easter
+      chat('WHERE!!!!!!')
+   if data.find ('!credits') != -1: #Credits with privat message
+      chatnick('------------------------------------------------------')
+      chatnick('|Bot is hosted by Azoth for #TVN                     |')
+      chatnick('|Bot was written by Azoth and Smack                  |')
+      chatnick('|Without Smack this bot would be homeless            |')
+      chatnick('|Thanks to CpTNapalm for creating this chat room     |')
+      chatnick('|Thanks to fingRfish for his support on #TVN         |')
+      chatnick('|FingRfish would like to thank his producers, organic|')
+      chatnick('|elements for making him who he is, rivers which have|')
+      chatnick('|allowed him to spawn, and the gnomes which          |')
+      chatnick('|continue to steal his underpants.                   |')
+      chatnick('------------------------------------------------------')
+   if data.find ( 'slaps AzothBot' ) != -1:
+      chat('This is the Trout Protection Agency. Please put the Trout Down and walk away with your hands in the air.')
+   print(data)
