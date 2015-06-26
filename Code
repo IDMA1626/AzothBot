@@ -1,83 +1,245 @@
-#!/usr/bin/python
-#Current complete code as of 6/24/15 9:55 MST
-
-
-
+!/usr/bin/python
+"""
+This is the IRC bot written by Smack and Azoth
+This bot is written in Python3 and designed for #TVN on EFnet
+You can contact the writers on #TVN
+"""
 import socket
+import urllib2.request
+import json
+import re
 
-def raw(msg):
-   message = msg+"\r\n"
-   irc.send(message.encode())
-def chat(msg):
-   message = "PRIVMSG #testing123 :" + msg + "\r\n"
-   irc.send(message.encode())
-def action(msg):
-   message = "PRIVMSG #testing123 :\x01ACTION " + msg + "\x01\r\n"
-   irc.send(message.encode())
-def chatnick(msg):
-   nick = data.split()[0]
-   message = "PRIVMSG " + nick + ":" + msg + "\r\n"
-   irc.send(message.encode())
-def auto_op
- 
-
-
+"""
+Here we are connecting to the IRC network that #TVN is located
+Along with loading the chaser page for a later command
+"""
 network = 'irc.shaw.ca'
 port = 6667
 irc = socket.socket( socket.AF_INET, socket.SOCK_STREAM)
-irc.connect(( network, port))
+irc.connect((network, port))
+mynick = "TVNbot"
+mychan = "#testing123"
+urlopen = "https://tvnweather.com/api/v1/chasers/all_active.json"
+ 
+"""
+This is the auto_op feature with nicks hard written in
+"""
+auto_op = ["smack","azoth","azmobile","cherrylg_","missy","cptnapalm","fingrfish","rumblez","map","kai","kai_"]
+try:
+   f = open("~/tvnconf","r")
+except:
+   pass
+else:
+   auto_op = f.split("\n")
+ 
+"""
+This is defining the unsramble function to unscramble words
+"""
+def unscramble(word):
+   url = "http://wordsmith.org/anagram/anagram.cgi?anagram={}&t=1000&a=n".format(word)
+   cont = urllib2.urlopen(url).read()
+   m = re.search("Displaying all:.*</b><br>(.*?)<br>",cont,re.DOTALL)
+   if m:
+      return m.group(1)
+   
+ 
+ 
+"""
+These 4 functions are defining how the bot will communicate
+This makes it easy to later add more commands
+"""
+def raw(msg):
+   message = msg+"\r\n"
+   print("Sending:",message.strip())
+   irc.send(message.encode())
+def chat(msg):
+   message = "PRIVMSG " + mychan + " :" + msg + "\r\n"
+   irc.send(message.encode())
+def chat_to(n,msg):
+   message = "PRIVMSG " + n + " :" + msg + "\r\n"
+   irc.send(message.encode())
+def action(msg):
+   message = "PRIVMSG "+mychan  + " :\x01ACTION " + msg + "\x01\r\n"
+   irc.send(message.encode())
  
 print(irc.recv(4096).decode())
  
-raw('NICK AzothBot')
-raw('USER  AzothBot AzothBot AzothBot :Python IRC')
-raw('JOIN #testing123')
-chat("Hello World")
-while True:
+raw('NICK '+ mynick)
+raw('USER {0} {0} {0} :Python IRC'.format(mynick)) # some trickery for less copy/paste
+raw('JOIN ' + mychan)
+# chat("Hello World")
+ 
+import time
+done = False
+while not done:
+   """
+   Here we collect what everyone is saying and split it into variables
+   """
    data =(irc.recv(4096).decode()) #removed extra annoying spaces?
    msg = data.split(":")
+   if data:
+      print(data)
+   else:
+      time.sleep(1)
    if len(msg)> 2:
       # print msg,len(msg)
       who_did = msg[1]
       hostname = who_did.split(" ")[0]
-      action = who_did.split(" ")[1]
+      verb = who_did.split(" ")[1]
       nick = hostname.split("!")[0]
-      words = msg[2].strip()
+      words = ":".join(msg[2:])
+      words = words.strip()
  
-      print("{} {}: {}".format(nick,action,words))
+      print("{} {}: {}".format(nick,verb,words))
    else:
       print(msg)
-      action = ""
-
-   if data.find('PING') != -1:
-      to_send = 'PONG ' + data.split()[1] + "\r\n"  #here, we're storing what you want to send as a variable, we can reference it later?
-      irc.send(to_send.encode()) #now, we can send what was stored, with encoding.
-   if action == "JOIN": #auto op
+      verb = ""
+      words = ""
+   
+ 
+   """
+   This is where the bot will auto_op specific nicks
+   """
+   if verb == "JOIN":
       if nick.lower() in auto_op:
          raw("MODE "+ mychan + " +o " + nick)
-   if data.find ( '!myBot quit' ) != -1: #quit bot
-      chat("Fine, if you don't want me")
-      chat('QUIT\r\n')
-   if data.find ( '!oldf') !=-1: # makes old fashioned
-      action( 'makes an old fashioned for ' + nick)
-   if data.find ( '!sandwich') !=-1: #makes sandwich
-      action( 'makes a GIGANTIC sanmmich for ' + nick)
-   if data.find ( '!hi' ) != -1: #says hi
-      chat('Hello')
-   if data.find ('!squirrel' ) != -1: #squirrel easter
-      chat('WHERE!!!!!!')
-   if data.find ('!credits') != -1: #Credits with privat message
-      chatnick('-----------------------------------------------------------------------------------')
-      chatnick('|Napalm is the creator and the owner of this spectacualr chat                     |')
-      chatnick('|fingRfish has a huge roll in this chat from the beginning                        |')
-      chatnick('|Without Smack this bot would be homeless                                         |')
-      chatnick('|Smack has brought this chat to 1337 status                                       |')
-      chatnick('|Thank you Kai, CherylG, missy, and MAP for keeping this chat alive from the start|')
-      chatnick('|FingRfish would like to thank his producers, organic                             |')
-      chatnick('|elements for making him who he is, rivers which have                             |')
-      chatnick('|allowed him to spawn, and the gnomes which                                       |')
-      chatnick('|continue to steal his underpants.                                                |')
-      chatnick('-----------------------------------------------------------------------------------')
-   if data.find ( 'slaps AzothBot' ) != -1:
-      chat('This is the Trout Protection Agency. Please put the Trout Down and walk away with your hands in the air.')
-   print(data)
+   """
+   This will use a website to unscramble a string of letters
+   """
+   if re.search("unscramble",words, re.I):
+      m =  re.search(": (\w+)",words,re.I)
+      if m:
+         lets = m.group(1)
+         print("Unscrambling:",lets)
+         uned = unscramble("".join(lets.split(" "))) 
+         if uned:
+            chat(uned.lower())
+            
+    """
+    This lets users type !chasers for a list of storm chasers that are online
+    """
+   if words.startswith("!chasers"):
+      r = urllib2.urlopen(url).read()
+      j = json.loads(r)
+      if j:
+         for chaser in sorted(j, key=lambda k: k['viewers']):
+            if chaser['active']:
+               chat_to(nick,"{} ({}):\t{}".format(chaser['name'],chaser['viewers'],chaser['playlist_url']))
+      else:
+         chat_to(nick,"No results, sorry.")
+   if words.startswith("!autoop"):
+      chat_to(nick," ".join(auto_op))
+   if words.startswith("!search"):
+      to_search = words.split("!search")[1].strip()
+      r = urllib2.urlopen(url).read()
+      j = json.loads(r)
+      if j:
+         print(j)
+         for chaser in sorted(j, key=lambda k: k['viewers']):
+            if to_search.lower() in chaser['name'].lower():
+               chat_to(nick,"{}:\t{}".format(chaser['name'],chaser['playlist_url']))
+      else:
+         chat_to(nick,"No results, sorry.")
+ 
+   if words.startswith("!RAW"):
+      print("Do:",words[4:])
+      raw(words[4:])
+   if words.startswith("!ops"):
+      chat_to(nick,"!autoop > List nicks to auto-op")
+      chat_to(nick,"!add NICK > Add NICK to auto-op list")
+      chat_to(nick,"!remove NICK > Remove NICK from auto-op list")
+      chat_to(nick,"!say HELLO > %s will say 'Hello'" % mynick)
+      chat_to(nick,"!action VERBS > %s will /me VERBS" % mynick)
+      chat_to(nick,"!quit > Bot will quit, saving the auto-op list for later.")
+   if words.startswith("!help"):
+      chat_to(nick,"!chasers > List active chasers")
+      chat_to(nick,"!search test > List active chasers with 'test' in their name")
+      chat_to(nick,"!remove NICK > Removes NICK from auto-op") # chat_to(nick,"!remove NICK > Remove NICK from auto-op list")
+      chat_to(nick,"!say HELLO > %s will say 'Hello'" % mynick)
+      chat_to(nick,"!action VERBS > %s will /me VERBS" % mynick)
+      chat_to(nick,"!quit > Bot will quit.  Please be nice.")
+ 
+   if words.startswith("!add"):      
+      to_add = words.split("!add")[1]
+      for nickname in to_add.split():
+         nickname = nickname.lower()
+         print("Adding to Ops:",nickname)
+         auto_op.append(nickname)
+ 
+   if words.startswith("!remove"):      
+      to_rem = words.split("!remove")[1]
+      for nickname in to_rem.split():
+         nickname = nickname.lower()
+         if nickname in auto_op:
+            print("Removing from Ops:",nickname)
+            auto_op.remove(nickname)
+ 
+   if words.startswith("!say"):
+      chat(words[5:])
+   if words.startswith("!action"):
+      action(words[8:])
+ 
+   if data.find('PING') != -1:
+      to_send = 'PONG ' + data.split()[1]
+      raw(to_send)
+ 
+   if words.startswith('!quit'):   
+      print("words",words)
+      raw("QUIT :Fine then!")
+      done = True
+ 
+   if words.startswith('!life'):
+      chat("Mama always said life was like a box of chocolates. You never know what you're gonna get.")
+      
+   if words.startswith('!badge'):
+      chat("Bades? We ain't got no badges! We don't need no bades! I don't have to show you any stinking badges!")
+
+   if ("!boat"):
+      chat("You're gonna need a bigger boat.")
+
+   if words.startswith('!oldf'):
+      action("makes an old fashioned for " + nick)
+ 
+   if words.startswith('!sandwich'):
+      action("makes a gin and tonic for " + nick)
+ 
+   if words.startswith('!hi'):
+      chat("Hullo")
+   if words.startswith('!hello'):
+      chat ("Hallo")
+ 
+   if words.startswith('!squirrel'):
+      chat("WHERE?!")
+      
+   if words.startswith('!number'):
+      chat("Random number: " + (random.randint(100) if random.random() < 0.0001 else 4))
+      
+   if words.startswith('bye'):
+      chat("Bye bye " + nick)
+
+   if words.startswith('0x10'):
+      chat_to(nick,'https://idmaphotography.wordpress.com/0x10-commandments/')
+ 
+   if words.startswith('!credits'):      
+      chat_to(nick,'+----------------------------------------------------+')
+      chat_to(nick,'|Thanks to CpTNapalm for creating this chat room     |')
+      chat_to(nick,'|Bot is hosted by Azoth for #tvn                     |')
+      chat_to(nick,'|Bot was written by Azoth and Smack                  |')
+      chat_to(nick,'|Without Smack this bot would be homeless            |')
+      chat_to(nick,'|Thanks to Smack for getting #TVN to 1337 status     |')
+      chat_to(nick,'|Thanks to fingRfish for his amazing support on #tvn |')
+      chat_to(nick,'|FingRfish would like to thank his producers, organic|')
+      chat_to(nick,'|elements for making him who he is, rivers which have|')
+      chat_to(nick,'|allowed him to spawn, and the gnomes which          |')
+      chat_to(nick,'|continue to steal his underpants.                   |')
+      chat_to(nick,'+----------------------------------------------------+')
+      
+   if data.find( 'what time is it') !=-1:
+      chat("Time not importnat. Only life important.")
+ 
+   if data.find( 'slaps SmackBot') != -1:
+      chat("This is the Trout Protection Agency. Please put the Trout Down and walk away with your hands in the air.")
+   
+ 
+with open("~/tvnconf","w") as of:
+   of.write("\n".join(auto_op))
